@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html lang="ms-MY">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Kemahiran Pemulihan: Aplikasi BODMAS</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { box-sizing: border-box; }
+    .activity-card { min-height: 400px; }
+    
+    /* Animasi */
+    @keyframes pulse-bounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+    }
+    .pulse-bounce { animation: pulse-bounce 0.5s ease-out 1; }
+    
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .fade-in { animation: fade-in 0.5s ease-out 1; }
+    
+    @keyframes shake {
+      0% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+      100% { transform: translateX(0); }
+    }
+    .shake { animation: shake 0.5s ease; }
+    
+    /* Gaya Asas */
+    .num-display {
+      min-width: 100px; min-height: 62px; 
+      padding: 0.5rem 1rem; border-width: 2px;
+      border-radius: 0.5rem; font-weight: bold;
+      font-size: 1.5rem; background-color: #f3f4f6;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: all 0.3s ease;
+    }
+    .op-symbol {
+      font-size: 2.25rem; font-weight: bold;
+      color: #4b5563; margin: 0 0.5rem;
+    }
+    
+    /* Aktiviti 1: Robot */
+    .robot-card {
+      border: 3px solid #d1d5db;
+      background-color: #f9fafb;
+      border-radius: 0.75rem;
+      padding: 1.5rem;
+      width: 100%;
+      max-width: 300px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .robot-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+    }
+    .robot-card.correct {
+      border-color: #22c55e;
+      background-color: #f0fdf4;
+    }
+    .robot-card.wrong {
+      border-color: #ef4444;
+      background-color: #fef2f2;
+    }
+
+    /* Aktiviti 2: Buka Kunci */
+    .bracket-group {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.5rem 1rem;
+      border-radius: 1rem;
+      background-color: #fef9c3; /* yellow-100 */
+      border: 2px dashed #facc15; /* yellow-400 */
+      font-size: 1.875rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .locked-part {
+      display: inline-flex;
+      align-items: center;
+      opacity: 0.4;
+      transition: opacity 0.3s ease;
+    }
+    .locked-part.unlocked {
+      opacity: 1;
+    }
+    .lock-icon {
+      font-size: 2rem;
+      margin-right: 0.5rem;
+    }
+    .solved-box {
+      background-color: #dcfce7 !important;
+      border-color: #22c55e !important;
+      transform: scale(1.1);
+    }
+
+    /* Aktiviti 3 & 4 & 5: Lampu Suluh */
+    .hotspot {
+      display: inline-block;
+      padding: 0.5rem;
+      border-radius: 0.75rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .hotspot:hover {
+      background-color: #eff6ff; /* blue-50 */
+    }
+    .hotspot.correct {
+      animation: pulse-bounce 0.5s;
+      background-color: #dcfce7;
+      border: 2px solid #22c55e;
+    }
+    .hotspot.wrong {
+      animation: shake 0.5s;
+      background-color: #fef2f2;
+      border: 2px solid #ef4444;
+    }
+    .equation-span {
+      display: inline-block;
+      padding: 0 0.25rem;
+      font-size: 1.875rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+    .equation-span.faded {
+      opacity: 0.3;
+      transform: scale(0.8);
+    }
+  </style>
+</head>
+<body class="bg-gradient-to-br from-indigo-50 to-pink-50 min-h-full">
+
+  <div class="bg-yellow-100 border-b-4 border-yellow-300 p-4 shadow-sm sticky top-0 z-10">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">📚</span>
+        <span id="info-text" class="text-lg font-semibold text-gray-800">
+          Pilih aktiviti untuk mula!
+        </span>
+      </div>
+      <button id="speak-btn"
+              class="bg-yellow-300 hover:bg-yellow-400 text-yellow-800 font-bold py-2 px-4 rounded-full text-xl transition-colors duration-200"
+              onclick="speakInfo()">
+        🔊
+      </button>
+    </div>
+  </div>
+
+  <div class="max-w-6xl mx-auto p-6">
+    <div class="bg-white rounded-xl shadow-lg p-6 mb-6 activity-card flex items-center justify-center">
+      <div id="activity-content" class="text-center w-full">
+        <div class="py-16">
+          <div class="text-6xl mb-4">🧠</div>
+          <h2 class="text-3xl font-bold text-gray-800 mb-4">
+            Kemahiran Pemulihan: Aplikasi BODMAS
+          </h2>
+          <p class="text-xl text-gray-600 mb-8">
+            Belajar tentang susunan operasi yang betul.
+          </p>
+          <div class="text-4xl">👇</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-xl shadow-lg p-6">
+      <h3 class="text-2xl font-bold text-gray-800 mb-4 text-center">Pilih Aktiviti</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+        <button onclick="loadActivity(1)"
+                class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          🤖 Robot Mana Betul?
+        </button>
+        <button onclick="loadActivity(2)"
+                class="bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          🔒 Buka Kunci Kurungan
+        </button>
+        <button onclick="loadActivity(3)"
+                class="bg-purple-500 hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          🔦 Lampu Suluh D/M
+        </button>
+        <button onclick="loadActivity(4)"
+                class="bg-orange-500 hover:bg-orange-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          🚶‍♂️ Kira Ikut Barisan A/S
+        </button>
+        <button onclick="loadActivity(5)"
+                class="bg-red-500 hover:bg-red-600 text-white font-bold py-3 px-4 rounded-lg text-lg transition-colors duration-200">
+          🏆 Peringkat Akhir
+        </button>
+      </div>
+      
+      <div class="flex justify-center gap-4">
+        <button onclick="clearActivity()" class="bg-gray-500 hover:bg-gray-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-colors duration-200">
+          🧹 Bersih
+        </button>
+        <button onclick="nextActivity()" class="bg-indigo-500 hover:bg-indigo-600 text-white font-bold py-2 px-6 rounded-lg text-lg transition-colors duration-200">
+          ➡️ Seterusnya
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let currentActivity = 0;
+    let ttsEnabled = false;
+    let currentInfo = "Pilih aktiviti untuk mula!";
+
+    /* ====== TTS ====== */
+    function speak(text) {
+      if (!ttsEnabled) return;
+      if (!('speechSynthesis' in window)) return;
+      window.speechSynthesis.cancel();
+      setTimeout(() => {
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'ms-MY';
+        u.rate = 0.9; u.pitch = 1.05;
+        const voices = window.speechSynthesis.getVoices();
+        const ms = voices.find(v => v.lang === 'ms-MY' || v.lang?.startsWith('ms'));
+        if (ms) u.voice = ms;
+        window.speechSynthesis.speak(u);
+      }, 100);
+    }
+    function setInfo(text) { currentInfo = text; document.getElementById('info-text').textContent = text; }
+    function speakInfo() {
+      if (!ttsEnabled) {
+        ttsEnabled = true;
+        const btn = document.getElementById('speak-btn');
+        btn.classList.add('bg-green-300', 'hover:bg-green-400');
+        btn.classList.remove('bg-yellow-300', 'hover:bg-yellow-400');
+      }
+      speak(currentInfo);
+    }
+    
+    // Helper penjana nombor
+    const r = (min,max) => Math.floor(Math.random()*(max-min+1))+min;
+    
+    // Helper 'shake'
+    function shakeElement(el) {
+        if (el) {
+            el.classList.add('shake');
+            setTimeout(() => el.classList.remove('shake'), 500);
+        }
+    }
+    
+    // Helper 'pulse'
+    function pulseElement(el) {
+      if (el) {
+        el.classList.add('pulse-bounce');
+        setTimeout(() => el.classList.remove('pulse-bounce'), 500);
+      }
+    }
+
+    /* ====== Router ====== */
+    function loadActivity(n) {
+      currentActivity = n;
+      const content = document.getElementById('activity-content');
+      if (n === 1) return loadActivity1(content);
+      if (n === 2) return loadActivity2(content);
+      if (n === 3) return loadActivity3(content);
+      if (n === 4) return loadActivity4(content);
+      if (n === 5) return loadActivity5(content);
+    }
+
+    /* ====== Aktiviti 1: Robot Mana Betul? (vs. Kiri-ke-Kanan) ====== */
+    function loadActivity1(content) {
+      const A = r(2, 5);
+      const B = r(3, 6);
+      const C = r(2, 4);
+      const wrongAnswer = (A + B) * C;
+      const rightAnswer = A + (B * C);
+      
+      setInfo("Pilih robot dengan jalan kira yang betul.");
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-blue-600 mb-6">🤖 Robot Mana Betul? (D/M vs A/S)</h3>
+        <p class="text-4xl font-bold text-gray-800 mb-8">${A} + ${B} × ${C} = ?</p>
+        
+        <div class="flex flex-wrap justify-center gap-6">
+          <div id="robotA" class="robot-card" onclick="checkA1Answer('wrong')">
+            <div class="text-3xl mb-2">🤖</div>
+            <h4 class="text-xl font-bold mb-2">Robot A (Kiri-ke-Kanan)</h4>
+            <p>"Saya kira ${A} + ${B} = ${A+B}.<br>Kemudian ${A+B} × ${C} = <b class="text-xl">${wrongAnswer}</b>."</p>
+          </div>
+          <div id="robotB" class="robot-card" onclick="checkA1Answer('correct')">
+            <div class="text-3xl mb-2">🦾</div>
+            <h4 class="text-xl font-bold mb-2">Robot B (Ikut BODMAS)</h4>
+            <p>"Saya kira <b class="text-blue-600">DARAB (×)</b> dahulu! ${B} × ${C} = ${B*C}.<br>Kemudian ${A} + ${B*C} = <b class="text-xl">${rightAnswer}</b>."</p>
+          </div>
+        </div>
+        
+        <div id="a1-feedback" class="text-lg font-semibold text-gray-700 min-h-6 mt-6"></div>
+         <div class="mt-6 flex flex-wrap gap-3 justify-center">
+           <button onclick="loadActivity(1)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-lg">🔄 Soalan Baharu</button>
+        </div>
+      `;
+    }
+    function checkA1Answer(choice) {
+      const feedback = document.getElementById('a1-feedback');
+      const robotA = document.getElementById('robotA');
+      const robotB = document.getElementById('robotB');
+      robotA.onclick = null;
+      robotB.onclick = null;
+      
+      if (choice === 'correct') {
+        robotB.classList.add('correct');
+        robotA.classList.add('wrong');
+        feedback.innerHTML = `<span class="text-green-600">Betul! BODMAS utamakan Darab (×) sebelum Tambah (+).</span>`;
+        setInfo("Betul! Darab didahulukan.");
+        speak("Betul! Darab didahulukan.");
+      } else {
+        robotA.classList.add('wrong');
+        robotB.classList.add('correct');
+        feedback.innerHTML = `<span class="text-red-600">Bukan. Ingat BODMAS! Darab (×) mesti dibuat dahulu.</span>`;
+        setInfo("Bukan. Darab mesti dibuat dahulu.");
+      }
+    }
+
+    /* ====== Aktiviti 2: Buka Kunci Kurungan (B) ====== */
+    let a2_state = { A: 0, B: 0, C: 0, midResult: 0, finalResult: 0, step: 0 };
+    function loadActivity2(content) {
+      a2_state.A = r(2, 5);
+      a2_state.B = r(5, 10);
+      a2_state.C = r(2, 5); // (B+C)
+      a2_state.midResult = a2_state.B + a2_state.C;
+      a2_state.finalResult = a2_state.A * a2_state.midResult;
+      a2_state.step = 0;
+      
+      setInfo(`Selesaikan operasi di dalam kurungan (B) dahulu.`);
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-green-600 mb-6">🔒 Buka Kunci Kurungan (B)</h3>
+        
+        <div id="a2-equation" class="flex flex-wrap items-center justify-center gap-2 mb-6 text-2xl md:text-3xl">
+          <span id="a2-part1" class="locked-part">
+            <span class="num-display">${a2_state.A}</span>
+            <span class="op-symbol">×</span>
+            <span id="a2-lock" class="lock-icon">🔒</span>
+          </span>
+          <span id="a2-bracket-group" class="bracket-group">
+            ( <span class="num-display" style="min-width: 60px;">${a2_state.B}</span>
+            <span class="op-symbol">+</span>
+            <span class="num-display" style="min-width: 60px;">${a2_state.C}</span> )
+          </span>
+          <span class="op-symbol">=</span>
+          <div id="a2-result" class="num-display border-green-500 text-green-800 bg-green-50">?</div>
+        </div>
+
+        <div id="a2-feedback" class="text-lg font-semibold text-gray-700 min-h-6 mt-6">
+          Langkah 1: Selesaikan operasi di dalam kurungan.
+        </div>
+        
+         <div class="mt-8 flex flex-wrap gap-3 justify-center">
+           <button id="a2-btn-step1" onclick="runA2Step(1)" class="bg-green-500 hover:bg-green-600 text-white px-5 py-3 rounded-xl text-lg">Selesaikan Kurungan ➡️</button>
+           <button id="a2-btn-step2" onclick="runA2Step(2)" class="bg-gray-400 text-white px-5 py-3 rounded-xl text-lg opacity-50" disabled>Kira Baki ➡️</button>
+           <button onclick="loadActivity(2)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-lg">🔄 Soalan Baharu</button>
+        </div>
+      `;
+    }
+    function runA2Step(stepNum) {
+      const { A, midResult, finalResult, step } = a2_state; // 'step' ialah state semasa
+      const btn1 = document.getElementById('a2-btn-step1');
+      const btn2 = document.getElementById('a2-btn-step2');
+      const feedback = document.getElementById('a2-feedback');
+      
+      if (stepNum === 1 && step === 0) { // Selesaikan Kurungan
+        const bracketGroup = document.getElementById('a2-bracket-group');
+        bracketGroup.innerHTML = `<span class="num-display solved-box">${midResult}</span>`;
+        pulseElement(bracketGroup.firstElementChild);
+        
+        document.getElementById('a2-part1').classList.add('unlocked');
+        document.getElementById('a2-lock').textContent = '🔓';
+        
+        feedback.textContent = `Langkah 2: Selesaikan baki persamaan. ${A} × ${midResult} = ?`;
+        
+        btn1.disabled = true;
+        btn1.classList.add('opacity-50');
+        btn2.disabled = false;
+        btn2.classList.remove('opacity-50', 'bg-gray-400');
+        btn2.classList.add('bg-green-500', 'hover:bg-green-600');
+        
+        a2_state.step = 1; // Kemas kini state
+        setInfo(`Kurungan diselesaikan. Hasilnya ${midResult}.`);
+      } else if (stepNum === 2 && step === 1) { // Kira Baki
+        const resultEl = document.getElementById('a2-result');
+        resultEl.textContent = finalResult;
+        pulseElement(resultEl);
+        
+        feedback.textContent = `Syabas! ${A} × ${midResult} = ${finalResult}.`;
+        
+        btn2.disabled = true;
+        btn2.classList.add('opacity-50');
+        btn2.textContent = "Selesai!";
+        
+        setInfo(`Syabas! Jawapan akhir ialah ${finalResult}.`);
+        speak(`Syabas! Jawapan akhir ialah ${finalResult}.`);
+      }
+    }
+
+    /* ====== Aktiviti 3: Lampu Suluh D/M (Kiri-ke-Kanan) ====== */
+    let a3_state = { A: 0, B: 0, C: 0, midResult: 0, finalResult: 0 };
+    function loadActivity3(content) {
+      a3_state.B = r(2, 5);
+      a3_state.A = r(10, 20) * a3_state.B;
+      a3_state.C = r(3, 6);
+      a3_state.midResult = a3_state.A / a3_state.B;
+      a3_state.finalResult = a3_state.midResult * a3_state.C;
+      
+      setInfo("Klik pada operasi (× atau ÷) yang perlu dikira dahulu.");
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-purple-600 mb-6">🔦 Lampu Suluh D/M (Kiri-ke-Kanan)</h3>
+        
+        <div id="a3-equation" class="flex flex-wrap items-center justify-center p-4 mb-6" style="min-height: 100px;">
+          <span id="a3-n1" class="equation-span">${a3_state.A}</span>
+          <span id="a3-op1" class="equation-span op hotspot" onclick="checkA3Step('step1')">÷</span>
+          <span id="a3-n2" class="equation-span">${a3_state.B}</span>
+          <span id="a3-op2" class="equation-span op hotspot" onclick="checkA3Step('step2')">×</span>
+          <span id="a3-n3" class="equation-span">${a3_state.C}</span>
+        </div>
+        
+        <div id="a3-feedback" class="text-lg font-semibold text-gray-700 min-h-6 mt-6">
+          Untuk Darab (×) dan Bahagi (÷), kita kira dari **kiri ke kanan**. Klik operasi pertama.
+        </div>
+         <div class="mt-8 flex flex-wrap gap-3 justify-center">
+           <button onclick="loadActivity(3)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-lg">🔄 Soalan Baharu</button>
+        </div>
+      `;
+    }
+    function checkA3Step(step) {
+      const feedback = document.getElementById('a3-feedback');
+      if (step === 'step1') { // Betul
+        document.getElementById('a3-op1').classList.add('correct');
+        document.getElementById('a3-op1').onclick = null;
+        document.getElementById('a3-op2').onclick = null;
+        
+        setTimeout(() => {
+          document.getElementById('a3-n1').classList.add('faded');
+          document.getElementById('a3-op1').classList.add('faded');
+          document.getElementById('a3-n2').textContent = a3_state.midResult;
+          document.getElementById('a3-n2').classList.add('pulse-bounce');
+          
+          feedback.textContent = `Betul! ${a3_state.A} ÷ ${a3_state.B} = ${a3_state.midResult}. Klik operasi seterusnya.`;
+          document.getElementById('a3-op2').onclick = () => checkA3Step('final');
+        }, 1000);
+      } else if (step === 'step2') { // Salah
+        document.getElementById('a3-op2').classList.add('wrong');
+        shakeElement(document.getElementById('a3-op2'));
+        feedback.textContent = `Bukan. Sentiasa mula dari kiri untuk × dan ÷.`;
+        setTimeout(() => document.getElementById('a3-op2').classList.remove('wrong'), 1000);
+      } else if (step === 'final') { // Langkah akhir
+        document.getElementById('a3-op2').classList.add('correct');
+        document.getElementById('a3-op2').onclick = null;
+        setTimeout(() => {
+          document.getElementById('a3-n2').classList.add('faded');
+          document.getElementById('a3-op2').classList.add('faded');
+          document.getElementById('a3-n3').textContent = a3_state.finalResult;
+          document.getElementById('a3-n3').classList.add('pulse-bounce');
+          feedback.textContent = `Syabas! ${a3_state.midResult} × ${a3_state.C} = ${a3_state.finalResult}.`;
+          setInfo(`Syabas! Jawapan akhir ialah ${a3_state.finalResult}.`);
+          speak(`Syabas! Jawapan akhir ialah ${a3_state.finalResult}.`);
+        }, 1000);
+      }
+    }
+
+    /* ====== Aktiviti 4: Kira Ikut Barisan A/S (Kiri-ke-Kanan) ====== */
+    function loadActivity4(content) {
+      const A = r(50, 100);
+      const B = r(10, 40);
+      const C = r(20, 50);
+      const midResult = A - B;
+      const finalResult = midResult + C;
+      
+      setInfo("Klik pada operasi (+ atau −) yang perlu dikira dahulu.");
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-orange-600 mb-6">🚶‍♂️ Kira Ikut Barisan A/S</h3>
+        
+        <div id="a4-equation" class="flex flex-wrap items-center justify-center p-4 mb-6" style="min-height: 100px;">
+          <span id="a4-n1" class="equation-span">${A}</span>
+          <span id="a4-op1" class="equation-span op hotspot" onclick="checkA4Step('step1', ${A}, ${B}, ${C}, ${midResult}, ${finalResult})">−</span>
+          <span id="a4-n2" class="equation-span">${B}</span>
+          <span id="a4-op2" class="equation-span op hotspot" onclick="checkA4Step('step2', ${A}, ${B}, ${C}, ${midResult}, ${finalResult})">+</span>
+          <span id="a4-n3" class="equation-span">${C}</span>
+        </div>
+        
+        <div id="a4-feedback" class="text-lg font-semibold text-gray-700 min-h-6 mt-6">
+          Untuk Tambah (+) dan Tolak (−), kita juga kira dari **kiri ke kanan**. Klik operasi pertama.
+        </div>
+         <div class="mt-8 flex flex-wrap gap-3 justify-center">
+           <button onclick="loadActivity(4)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-lg">🔄 Soalan Baharu</button>
+        </div>
+      `;
+    }
+    function checkA4Step(step, A, B, C, midResult, finalResult) {
+      const feedback = document.getElementById('a4-feedback');
+      if (step === 'step1') { // Betul
+        document.getElementById('a4-op1').classList.add('correct');
+        document.getElementById('a4-op1').onclick = null;
+        document.getElementById('a4-op2').onclick = null;
+        
+        setTimeout(() => {
+          document.getElementById('a4-n1').classList.add('faded');
+          document.getElementById('a4-op1').classList.add('faded');
+          document.getElementById('a4-n2').textContent = midResult;
+          document.getElementById('a4-n2').classList.add('pulse-bounce');
+          
+          feedback.textContent = `Betul! ${A} - ${B} = ${midResult}. Klik operasi seterusnya.`;
+          document.getElementById('a4-op2').onclick = () => checkA4Step('final', A, B, C, midResult, finalResult);
+        }, 1000);
+      } else if (step === 'step2') { // Salah
+        document.getElementById('a4-op2').classList.add('wrong');
+        shakeElement(document.getElementById('a4-op2'));
+        feedback.textContent = `Bukan. Sentiasa mula dari kiri untuk + dan −.`;
+        setTimeout(() => document.getElementById('a4-op2').classList.remove('wrong'), 1000);
+      } else if (step === 'final') { // Langkah akhir
+        document.getElementById('a4-op2').classList.add('correct');
+        document.getElementById('a4-op2').onclick = null;
+        setTimeout(() => {
+          document.getElementById('a4-n2').classList.add('faded');
+          document.getElementById('a4-op2').classList.add('faded');
+          document.getElementById('a4-n3').textContent = finalResult;
+          document.getElementById('a4-n3').classList.add('pulse-bounce');
+          feedback.textContent = `Syabas! ${midResult} + ${C} = ${finalResult}.`;
+          setInfo(`Syabas! Jawapan akhir ialah ${finalResult}.`);
+          speak(`Syabas! Jawapan akhir ialah ${finalResult}.`);
+        }, 1000);
+      }
+    }
+
+
+    /* ====== Aktiviti 5: Peringkat Akhir (Gabungan Penuh) ====== */
+    function loadActivity5(content) {
+      const A = r(10, 20);
+      const B = r(3, 5);
+      const C = r(4, 8);
+      const D = r(5, 10);
+      const midResult1 = B * C; // Kurungan
+      const midResult2 = A + midResult1; // Tambah
+      const finalResult = midResult2 - D; // Tolak
+      
+      setInfo("Gabungan semua! Selesaikan ikut urutan BODMAS.");
+      content.innerHTML = `
+        <h3 class="text-2xl font-bold text-red-600 mb-6">🏆 Peringkat Akhir BODMAS</h3>
+        
+        <div id="a5-equation" class="flex flex-wrap items-center justify-center p-4 mb-6" style="min-height: 100px;">
+          <span id="a5-n1" class="equation-span">${A}</span>
+          <span id="a5-op1" class="equation-span op hotspot" onclick="checkA5Step('A+', ${A}, ${B}, ${C}, ${D}, ${midResult1}, ${midResult2}, ${finalResult})">+</span>
+          <span id="a5-b-open" class="equation-span op">(</span>
+          <span id="a5-n2" class="equation-span">${B}</span>
+          <span id="a5-op2" class="equation-span op hotspot" onclick="checkA5Step('B*C', ${A}, ${B}, ${C}, ${D}, ${midResult1}, ${midResult2}, ${finalResult})">×</span>
+          <span id="a5-n3" class="equation-span">${C}</span>
+          <span id="a5-b-close" class="equation-span op">)</span>
+          <span id="a5-op3" class="equation-span op hotspot" onclick="checkA5Step('C-D', ${A}, ${B}, ${C}, ${D}, ${midResult1}, ${midResult2}, ${finalResult})">−</span>
+          <span id="a5-n4" class="equation-span">${D}</span>
+        </div>
+        
+        <div id="a5-feedback" class="text-lg font-semibold text-gray-700 min-h-6 mt-6">
+          Klik operasi yang perlu diselesaikan dahulu mengikut BODMAS.
+        </div>
+         <div class="mt-8 flex flex-wrap gap-3 justify-center">
+           <button onclick="loadActivity(5)" class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-lg">🔄 Soalan Baharu</button>
+        </div>
+      `;
+    }
+    
+    // === FUNGSI DIBAIKI ===
+    function checkA5Step(step, A, B, C, D, mid1, mid2, final) {
+      const feedback = document.getElementById('a5-feedback');
+      
+      document.querySelectorAll('.hotspot').forEach(el => el.onclick = null);
+
+      if (step === 'B*C') { // 1. Betul (Kurungan)
+        document.getElementById('a5-op2').classList.add('correct');
+        feedback.textContent = `Betul! Kurungan (B) dahulu: ${B} × ${C} = ${mid1}.`;
+        
+        setTimeout(() => {
+          // Gantikan (B * C) dengan mid1
+          document.getElementById('a5-b-open').style.display = 'none'; // Sembunyi (
+          document.getElementById('a5-n2').textContent = mid1;
+          document.getElementById('a5-op2').style.display = 'none';
+          document.getElementById('a5-n3').style.display = 'none';
+          document.getElementById('a5-b-close').style.display = 'none'; // Sembunyi )
+          
+          feedback.textContent = `Bagus! Persamaan kini menjadi: ${A} + ${mid1} - ${D}. Klik operasi seterusnya.`;
+          
+          // Aktifkan hotspot seterusnya
+          document.getElementById('a5-op1').onclick = () => checkA5Step('A+mid1', A, B, C, D, mid1, mid2, final);
+          document.getElementById('a5-op3').onclick = () => checkA5Step('mid1-D', A, B, C, D, mid1, mid2, final);
+        }, 1500);
+        
+      } else if (step === 'A+mid1') { // 2. Betul (Kiri-ke-kanan)
+        document.getElementById('a5-op1').classList.add('correct');
+        feedback.textContent = `Bagus! Kira A/S dari kiri: ${A} + ${mid1} = ${mid2}.`;
+        
+        setTimeout(() => {
+          document.getElementById('a5-n1').classList.add('faded');
+          document.getElementById('a5-op1').classList.add('faded');
+          document.getElementById('a5-n2').textContent = mid2;
+          
+          feedback.textContent = `Hampir siap! Persamaan kini: ${mid2} - ${D}. Klik operasi terakhir.`;
+          
+          // Aktifkan hotspot terakhir
+          document.getElementById('a5-op3').onclick = () => checkA5Step('final', A, B, C, D, mid1, mid2, final);
+        }, 1500);
+        
+      } else if (step === 'final') { // 3. Betul (Langkah Akhir)
+        document.getElementById('a5-op3').classList.add('correct');
+        feedback.textContent = `Syabas! ${mid2} - ${D} = ${final}.`;
+        
+        setTimeout(() => {
+          document.getElementById('a5-n2').classList.add('faded');
+          document.getElementById('a5-op3').classList.add('faded');
+          document.getElementById('a5-n4').textContent = final;
+          document.getElementById('a5-n4').classList.add('pulse-bounce');
+          
+          feedback.textContent = `SELESAI! Jawapan akhir ialah ${final}.`;
+          setInfo(`Syabas! Jawapan akhir ialah ${final}.`);
+          speak(`Syabas! Jawapan akhir ialah ${final}.`);
+        }, 1500);
+
+      } else { // Pilihan yang Salah
+        const wrongElId = (step === 'A+') ? 'a5-op1' : 'a5-op3';
+        const wrongEl = document.getElementById(wrongElId);
+        wrongEl.classList.add('wrong');
+        shakeElement(wrongEl);
+        feedback.textContent = "Bukan. Ingat BODMAS! Selesaikan Kurungan (B) dahulu!";
+        setTimeout(() => {
+          wrongEl.classList.remove('wrong');
+          // Aktifkan semula semua hotspot
+          document.querySelectorAll('.hotspot').forEach(el => {
+              const onclickAttr = el.getAttribute('onclick');
+              if(onclickAttr && el.style.display !== 'none') {
+                  el.onclick = () => checkA5Step(onclickAttr.split("'")[1], A, B, C, D, mid1, mid2, final);
+              }
+          });
+        }, 1000);
+      }
+    }
+
+
+    /* ====== Kawalan Umum ====== */
+    function clearActivity() {
+      currentActivity = 0;
+      document.getElementById('activity-content').innerHTML = `
+        <div class="text-center py-16">
+          <div class="text-6xl mb-4">🧠</div>
+          <h2 class="text-3xl font-bold text-gray-800 mb-4">Kemahiran Pemulihan: Aplikasi BODMAS</h2>
+          <p class="text-xl text-gray-600 mb-8">Belajar tentang susunan operasi yang betul.</p>
+          <div class="text-4xl">👇</div>
+        </div>
+      `;
+      setInfo("Pilih aktiviti untuk mula!");
+    }
+    function nextActivity() {
+      if (currentActivity === 0) return loadActivity(1);
+      if (currentActivity < 5) return loadActivity(currentActivity + 1);
+      return loadActivity(1);
+    }
+
+    // Kekalkan TTS resume pada sesetengah pelayar
+    if ('speechSynthesis' in window) {
+      setInterval(() => { if (window.speechSynthesis.paused) window.speechSynthesis.resume(); }, 1000);
+    }
+  </script>
+</body>
+</html>
